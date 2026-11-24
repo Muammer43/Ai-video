@@ -28,7 +28,6 @@ def defaults() -> dict:
             "video": ["fal", "runway", "replicate", "stock", "ken_burns"],
             "tts": ["openai", "elevenlabs", "espeak"],
             "stt": ["openai", "aligner"],
-            "stock": ["pexels", "pixabay"],
         },
         "automation": {"paused": False},
         "preferences": {"language": "tr", "watermark": False},

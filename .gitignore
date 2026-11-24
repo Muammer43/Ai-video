@@ -20,3 +20,4 @@ android_app/android/app/google-services.json
 *.keystore
 dist/
 node_modules/
+dist/*.apk

@@ -108,7 +108,9 @@ def tick() -> dict:
                     continue
                 exp_id, variant, vparams = _assign_variant(db, ch)
                 opts = {**(ch.brand or {}).get("options", {}), **vparams}
-                pending_slots = [p.scheduled_at for p in []]  # yer tutucu: yayın zamanı yayın servisi tarafından çakışmasız seçilir
+                from ..models import Publication
+                pending_slots = [t for (t,) in db.execute(select(Publication.scheduled_at).where(Publication.user_id == ch.user_id, Publication.scheduled_at.is_not(None), Publication.status == "QUEUED"))]
+                pending_slots += [datetime.fromisoformat(po["publish_at"]) for (po,) in db.execute(select(Project.options).where(Project.channel_id == ch.id, Project.status.in_(list(Status.ACTIVE))))if po and po.get("publish_at")]
                 slot = _next_slot(ch.posting_hours or [], now, pending_slots)
                 if slot:
                     opts["publish_at"] = slot.isoformat()

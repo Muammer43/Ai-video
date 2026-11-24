@@ -44,3 +44,17 @@ def test_claim_prevents_double_run(user, env):
     assert claim(pid) is True
     assert claim(pid) is False  # ikinci işçi aynı işi alamaz
     assert run_project(pid)["status"] == "skipped"
+
+
+def test_trend_filters_skip_main_page():
+    """Wikimedia yanıtı (MOCK) — ana sayfa ve özel sayfalar trend sayılmaz."""
+    import httpx
+    from backend.providers import http as H
+    from backend.services import trends
+    arts = [{"article": a, "views": 100 - i, "rank": i + 1} for i, a in enumerate(["Anasayfa", "Özel:Ara", "Büyük_Patlama", "Vikipedi:Hakkında", "Mars"])]
+    H.set_transport_factory(lambda: httpx.MockTransport(lambda r: httpx.Response(200, json={"items": [{"articles": arts}]})))
+    try:
+        out = trends.fetch_wikipedia("tr", limit=10)
+    finally:
+        H.set_transport_factory(None)
+    assert [t["title"] for t in out] == ["Büyük Patlama", "Mars"]

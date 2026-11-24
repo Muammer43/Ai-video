@@ -1,0 +1,79 @@
+# AI Video Factory Pro V2 — üretim yığını: Caddy(TLS) → API → PostgreSQL / Redis / MinIO(S3) + Celery worker + beat
+x-app: &app
+  build: .
+  env_file: .env
+  environment: &env
+    DATABASE_URL: postgresql://${POSTGRES_USER:-aivf}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aivf}
+    REDIS_URL: redis://redis:6379/0
+    STORAGE_BACKEND: s3
+    S3_ENDPOINT_URL: http://minio:9000
+    S3_BUCKET: ${S3_BUCKET:-aivf}
+    S3_ACCESS_KEY: ${MINIO_ROOT_USER:-aivfminio}
+    S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    PUBLIC_BASE_URL: https://${DOMAIN:-localhost}
+    ENV: prod
+  restart: unless-stopped
+  depends_on:
+    postgres: {condition: service_healthy}
+    redis: {condition: service_healthy}
+    minio: {condition: service_healthy}
+
+services:
+  api:
+    <<: *app
+    command: ["api"]
+    expose: ["8000"]
+  worker:
+    <<: *app
+    command: ["worker"]
+    depends_on:
+      api: {condition: service_healthy}
+    volumes: ["work:/data/work"]
+  beat:
+    <<: *app
+    command: ["beat"]
+    depends_on:
+      api: {condition: service_healthy}
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aivf}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-aivf}
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aivf}"]
+      interval: 10s
+      retries: 10
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: ["redisdata:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 10
+    restart: unless-stopped
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-aivfminio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes: ["miniodata:/data"]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      retries: 10
+    restart: unless-stopped
+  caddy:
+    image: caddy:2-alpine
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes: ["./docker/Caddyfile:/etc/caddy/Caddyfile:ro", "caddydata:/data"]
+    depends_on: [api]
+    restart: unless-stopped
+
+volumes: {pgdata: {}, redisdata: {}, miniodata: {}, caddydata: {}, work: {}}

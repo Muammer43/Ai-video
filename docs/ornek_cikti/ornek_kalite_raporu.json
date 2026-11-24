@@ -1,0 +1,239 @@
+{
+ "topic": "Temiz kurulum duman testi",
+ "status": "NEEDS_REVIEW",
+ "quality_score": 97,
+ "qc_decision": "review",
+ "media_report": {
+  "counts": {
+   "procedural": 3
+  },
+  "scenes": [
+   {
+    "idx": 0,
+    "origin": "procedural",
+    "provider": "procedural"
+   },
+   {
+    "idx": 1,
+    "origin": "procedural",
+    "provider": "procedural"
+   },
+   {
+    "idx": 2,
+    "origin": "procedural",
+    "provider": "procedural"
+   }
+  ],
+  "fallbacks": [],
+  "providers": {
+   "procedural": 0
+  },
+  "ai_video_ratio": 0.0
+ },
+ "quality_report": {
+  "score": 97,
+  "checks": [
+   {
+    "id": "file_opens",
+    "data": {},
+    "name": "Video dosyası açılıyor",
+    "score": 1.0,
+    "detail": "h264/aac 18.0 sn, tam çözme hatasız",
+    "status": "pass",
+    "weight": 10,
+    "critical": false
+   },
+   {
+    "id": "duration",
+    "data": {
+     "duration": 18.033333
+    },
+    "name": "Süre uygun",
+    "score": 1.0,
+    "detail": "18.0 sn (hedef 15 sn)",
+    "status": "pass",
+    "weight": 6,
+    "critical": false
+   },
+   {
+    "id": "audio_present",
+    "data": {},
+    "name": "Ses var",
+    "score": 1.0,
+    "detail": "ort. ses -17.7 dB",
+    "status": "pass",
+    "weight": 10,
+    "critical": false
+   },
+   {
+    "id": "loudness",
+    "data": {
+     "lufs": -14.0,
+     "true_peak_dbfs": -1.4
+    },
+    "name": "Ses seviyesi uygun",
+    "score": 1.0,
+    "detail": "-14.0 LUFS, tepe -1.4 dBFS",
+    "status": "pass",
+    "weight": 6,
+    "critical": false
+   },
+   {
+    "id": "black_frames",
+    "data": {},
+    "name": "Siyah kare yok",
+    "score": 1.0,
+    "detail": "siyah bölüm bulunmadı",
+    "status": "pass",
+    "weight": 8,
+    "critical": false
+   },
+   {
+    "id": "empty_scenes",
+    "data": {},
+    "name": "Boş sahne yok",
+    "score": 1.0,
+    "detail": "3 sahnenin hepsinde görsel içerik var",
+    "status": "pass",
+    "weight": 8,
+    "critical": false
+   },
+   {
+    "id": "resolution",
+    "data": {},
+    "name": "Çözünürlük uygun",
+    "score": 1.0,
+    "detail": "720x1280 @ 30 fps",
+    "status": "pass",
+    "weight": 6,
+    "critical": false
+   },
+   {
+    "id": "subtitle_sync",
+    "data": {
+     "recall": 1.0,
+     "precision": 0.976
+    },
+    "name": "Altyazı senkronu",
+    "score": 1.0,
+    "detail": "isabet 98%, kapsama 100%",
+    "status": "pass",
+    "weight": 8,
+    "critical": false
+   },
+   {
+    "id": "av_match",
+    "data": {},
+    "name": "Görüntü–ses uyumu",
+    "score": 1.0,
+    "detail": "anlatım süreleri sahnelere sığıyor, hız normal",
+    "status": "pass",
+    "weight": 8,
+    "critical": false
+   },
+   {
+    "id": "repeated_scenes",
+    "data": {},
+    "name": "Tekrarlanan sahne yok",
+    "score": 1.0,
+    "detail": "sahneler birbirinden farklı",
+    "status": "pass",
+    "weight": 6,
+    "critical": false
+   },
+   {
+    "id": "visual_quality",
+    "data": {
+     "sharpness": 1526.3,
+     "brightness": 37.8
+    },
+    "name": "Görsel kalite",
+    "score": 1.0,
+    "detail": "keskinlik 1526, parlaklık 38",
+    "status": "pass",
+    "weight": 8,
+    "critical": false
+   },
+   {
+    "id": "content_safety",
+    "data": {
+     "rules": {}
+    },
+    "name": "İçerik güvenli",
+    "score": 0.6,
+    "detail": "AI güvenlik incelemesi yok",
+    "status": "warn",
+    "weight": 8,
+    "critical": false
+   },
+   {
+    "id": "copyright",
+    "data": {
+     "notes": [
+      "müzik bu sistemde sentezlendi (telif yok)"
+     ]
+    },
+    "name": "Telif / kullanım hakkı listesi",
+    "score": 1.0,
+    "detail": "müzik bu sistemde sentezlendi (telif yok)",
+    "status": "pass",
+    "weight": 6,
+    "critical": false
+   },
+   {
+    "id": "platform_format",
+    "data": {},
+    "name": "Platform formatı",
+    "score": 1.0,
+    "detail": "youtube için uygun (720x1280, h264/aac)",
+    "status": "pass",
+    "weight": 8,
+    "critical": false
+   }
+  ],
+  "reasons": [
+   "yüksek riskli bayrak: safety_llm_unavailable; template_script; offline_voice; placeholder_visuals"
+  ],
+  "critical": [],
+  "decision": "review",
+  "measured": {
+   "lufs": -14.0,
+   "mean_volume_db": -17.7
+  },
+  "risk_flags": [
+   {
+    "id": "safety_llm_unavailable",
+    "detail": "AI güvenlik incelemesi yapılamadı (sağlayıcı yok/başarısız)",
+    "severity": "high"
+   },
+   {
+    "id": "template_script",
+    "detail": "senaryo AI ile değil yerel şablonla üretildi",
+    "severity": "high"
+   },
+   {
+    "id": "offline_voice",
+    "detail": "seslendirme yerel robotik sentez (AI ses değil)",
+    "severity": "high"
+   },
+   {
+    "id": "placeholder_visuals",
+    "detail": "sahnelerin %100'i yer tutucu gradyan",
+    "severity": "high"
+   },
+   {
+    "id": "slideshow",
+    "detail": "slayt/hareketli görsel modu (AI video değil)",
+    "severity": "low"
+   }
+  ],
+  "thresholds": {
+   "review_min": 60,
+   "low_risk_min": 80,
+   "auto_publish_min": 90
+  },
+  "recommendations": [
+   "İçerik güvenli: AI güvenlik incelemesi yok"
+  ]
+ }
+}

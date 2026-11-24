@@ -1,0 +1,10 @@
+# Otomatik HTTPS (Let's Encrypt). DOMAIN ortam değişkeni .env'den gelir; yerel test için DOMAIN=localhost.
+{$DOMAIN:localhost} {
+	encode gzip
+	request_body {
+		max_size 30MB
+	}
+	reverse_proxy api:8000 {
+		flush_interval -1
+	}
+}

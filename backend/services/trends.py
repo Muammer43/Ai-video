@@ -20,7 +20,7 @@ YT_CATEGORY = {"Oyun": "20", "GTA 6": "20", "Teknoloji": "28", "Yapay Zekâ": "2
                "Eğlence": "24", "Seyahat": "19"}
 HN_CATS = {"Teknoloji", "Yapay Zekâ", "Bilim", "Finans"}
 AI_WORDS = ("ai", "gpt", "llm", "openai", "anthropic", "claude", "gemini", "model", "neural", "diffusion", "agent")
-WIKI_SKIP = ("Main_Page", "Special:", "Ana_Sayfa", "Özel:", "Wikipedia:", "Vikipedi:", "-")
+WIKI_SKIP = ("Main_Page", "Special:", "Ana_Sayfa", "Anasayfa", "Özel:", "Wikipedia:", "Vikipedi:", "Vikipedi", "Kategori:", "Dosya:", "Şablon:")
 
 
 def fetch_youtube(category: str, creds: CredentialResolver, region: str = "TR") -> list[dict]:
@@ -73,7 +73,7 @@ def fetch_wikipedia(lang: str = "tr", limit: int = 15) -> list[dict]:
     out = []
     for a in arts:
         t = a["article"]
-        if any(s in t for s in WIKI_SKIP[:5]) or t == "Main_Page":
+        if t in WIKI_SKIP or any(t.startswith(s) for s in WIKI_SKIP if s.endswith(":")):
             continue
         out.append({"source": f"wikipedia_{lang}", "external_id": t, "title": t.replace("_", " "),
                     "url": f"https://{lang}.wikipedia.org/wiki/{t}", "category": "Bilgi",
