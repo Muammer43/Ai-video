@@ -35,6 +35,9 @@ async def lifespan(app: FastAPI):
     ensure_dirs(s)
     if s.database_url.startswith("sqlite") or s.env in ("dev", "test"):
         create_all()  # üretimde şema Alembic ile yönetilir (alembic upgrade head)
+    if s.celery_eager and s.env != "test":  # Redis/beat yok: otomasyon, takılı iş toparlama ve zamanlanmış yayın için gömülü zamanlayıcı
+        from .workers import embedded
+        embedded.start()
     yield
 
 

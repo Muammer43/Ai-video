@@ -56,3 +56,26 @@ def test_deadline_exceeded_is_detected(user, env):
     import pytest
     with pytest.raises(DeadlineExceeded):
         cancel_checker(pid)()
+
+
+def test_embedded_scheduler_runs_due_tasks_and_reaps_after_restart(user, env, monkeypatch):
+    """Redis/beat olmayan kurulumda (Termux) gömülü zamanlayıcı görevleri zamanında çalıştırır; süreç ölüp açılınca takılı iş toparlanır."""
+    from backend.workers import embedded, tasks
+    called = []
+    for name, _ in embedded.SCHEDULE:
+        monkeypatch.setattr(getattr(tasks, name), "run", (lambda n: (lambda: called.append(n)))(name))
+    last = {}
+    T = 100000.0
+    ran = embedded.run_due(last, T)
+    assert set(ran) == {n for n, _ in embedded.SCHEDULE}  # ilk turda hepsi
+    assert embedded.run_due(last, T + 10) == []  # aralık dolmadan tekrar çalışmaz
+    assert embedded.run_due(last, T + 61) == ["scheduler_tick_task", "publish_due_task"]
+    assert "reap_stuck_task" in embedded.run_due(last, T + 125)
+
+
+def test_stuck_job_after_process_death_is_requeued_by_reaper(user, env, monkeypatch):
+    monkeypatch.setattr("backend.workers.tasks.dispatch", lambda *a, **k: "x")
+    pid = make_project(user, status="PROCESSING", attempts=1)
+    with session_scope() as db:
+        db.get(Project, pid).heartbeat_at = utcnow() - timedelta(minutes=30)
+    assert reap_stuck_task.run()["requeued"] == 1
