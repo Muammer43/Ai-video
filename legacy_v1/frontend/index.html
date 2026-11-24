@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="tr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827"><link rel="manifest" href="/manifest.webmanifest">
+<title>AI Video Factory</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1120;--panel:#121d30;--line:#26364d;--muted:#9aabc2;--text:#f3f6fb;--accent:#7c9cff;--green:#36d399}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0,#1c3153 0,transparent 30%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+header{position:sticky;top:0;background:#0b1120eF;backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:15px max(16px,calc((100% - 1100px)/2));z-index:2}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}.logo{background:linear-gradient(135deg,#718cff,#a17cff);padding:9px;border-radius:12px}
+main{max-width:1100px;margin:auto;padding:22px 16px 90px}.hero{display:flex;justify-content:space-between;align-items:end;gap:15px;flex-wrap:wrap;margin:10px 0 22px}
+h1{font-size:clamp(25px,5vw,38px);margin:0 0 6px}.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.card{background:linear-gradient(145deg,#17243a,#111b2c);border:1px solid var(--line);border-radius:17px;padding:17px;margin-bottom:14px;box-shadow:0 10px 30px #0002}
+.stat{font-size:27px;font-weight:800;margin-top:8px}.layout{display:grid;grid-template-columns: minmax(0,1.15fr) minmax(280px,.85fr);gap:14px}
+label{display:block;font-size:13px;color:#bdcbe0;margin:13px 0 6px}input,select{width:100%;background:#0c1525;color:white;border:1px solid #34445c;border-radius:10px;padding:12px;font:inherit}
+button{background:var(--accent);border:0;border-radius:11px;padding:12px 16px;color:#081226;font-weight:800;font-size:14px;cursor:pointer}
+button.secondary{background:#26364d;color:#eaf0ff}button:disabled{opacity:.5;cursor:wait}
+.checks{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0}.checks label{display:flex;align-items:center;gap:6px;margin:0}.checks input{width:auto}
+.job{border:1px solid var(--line);border-radius:13px;padding:13px;margin:10px 0;background:#0d1728}.jobtop{display:flex;justify-content:space-between;gap:10px}.pill{font-size:11px;border-radius:20px;padding:5px 9px;background:#26364d;color:#dbe6ff;white-space:nowrap}.bar{height:6px;background:#25334a;border-radius:8px;margin:10px 0;overflow:hidden}.bar span{display:block;height:100%;background:linear-gradient(90deg,#718cff,#36d399)}
+.small{font-size:12px;color:var(--muted)}video{width:100%;max-height:480px;background:#05080e;border-radius:12px;margin-top:10px}
+.notice{border:1px solid #66552a;background:#2b2413;color:#f5d98b;padding:12px;border-radius:12px;font-size:13px;margin:14px 0}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}main{padding-top:14px}.card{padding:14px}}
+</style></head>
+<body>
+<header><div class="brand"><span class="logo">✦</span> AI VIDEO FACTORY <span class="pill">V1 MVP</span></div></header>
+<main>
+<div class="hero"><div><h1>İçerik üretim merkezi</h1><div class="muted">Fikrini gir. AI senaryoyu hazırlasın, videoyu oluştursun.</div></div><div class="pill" id="systemState">Sistem kontrol ediliyor…</div></div>
+<div class="notice">Bu MVP, gerçek AI görsel üretimi için API anahtarı gerektirir. Anahtar yoksa test amaçlı taslak video üretir. Sosyal medya yayınlama bağlantıları henüz canlı değildir; sistem yayınlandı gibi göstermez.</div>
+<div class="grid">
+ <div class="card"><div class="muted">Toplam işler</div><div class="stat" id="total">0</div></div>
+ <div class="card"><div class="muted">Tamamlanan</div><div class="stat" id="done">0</div></div>
+ <div class="card"><div class="muted">Üretimde</div><div class="stat" id="working">0</div></div>
+ <div class="card"><div class="muted">İnceleme gerekli</div><div class="stat" id="review">0</div></div>
+</div>
+<div class="layout">
+<section class="card">
+<h2>＋ Yeni video üret</h2>
+<form id="createForm">
+<label>Video konusu</label><input id="topic" required minlength="3" maxlength="240" placeholder="Örn. GTA 6 dünyasındaki bilinmeyen detaylar">
+<label>Kategori</label><select id="category"><option value="general">Genel</option><option>Oyun</option><option>Teknoloji</option><option>Otomobil</option><option>Bilgi</option><option>Eğlence</option><option>Bilim</option><option>Seyahat</option></select>
+<label>Görsel stil</label><select id="style"><option value="cinematic">Sinematik</option><option value="documentary">Belgesel</option><option value="energetic">Hızlı / enerjik</option><option value="minimal">Minimal</option></select>
+<label>Video süresi</label><select id="duration"><option value="15">15 saniye</option><option value="30" selected>30 saniye</option><option value="45">45 saniye</option><option value="60">60 saniye</option><option value="90">90 saniye</option></select>
+<label>Hedef platformlar</label><div class="checks">
+<label><input type="checkbox" value="youtube" checked> YouTube Shorts</label>
+<label><input type="checkbox" value="tiktok" checked> TikTok</label>
+<label><input type="checkbox" value="instagram" checked> Instagram Reels</label></div>
+<button id="createBtn" type="submit">AI video üretimini başlat</button>
+</form>
+</section>
+<section class="card"><h2>Üretim akışı</h2>
+<div class="job"><b>01 · Senaryo</b><p class="small">Hook, sahne akışı, açıklama ve etiketler.</p></div>
+<div class="job"><b>02 · Görsel ve ses</b><p class="small">Yapılandırılmış AI servislerinden sahne görselleri ve ses.</p></div>
+<div class="job"><b>03 · Kurgu ve render</b><p class="small">FFmpeg ile dikey MP4 üretimi.</p></div>
+<div class="job"><b>04 · Kalite kapısı</b><p class="small">Dosya, süre ve sahne kontrolleri.</p></div>
+<div class="job"><b>05 · Yayın</b><p class="small">Resmî platform bağlantıları tamamlandığında otomatik yayın.</p></div>
+</section></div>
+<section class="card"><div class="jobtop"><h2>Son üretimler</h2><button class="secondary" onclick="loadJobs()">Yenile</button></div><div id="jobs"><p class="muted">Henüz üretim yok.</p></div></section>
+<section class="card" id="detail" hidden><h2>Video detayları</h2><div id="detailBody"></div></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+async function api(url,opts={}){const r=await fetch(url,{headers:{'Content-Type':'application/json'},...opts});if(!r.ok)throw new Error(await r.text());return r.json()}
+function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function statusLabel(s){return ({queued:'Kuyrukta',processing:'Üretiliyor',completed:'Hazır',needs_review:'İnceleme gerekli',failed:'Hata'})[s]||s}
+async function loadJobs(){try{const jobs=await api('/api/jobs');$('total').textContent=jobs.length;$('done').textContent=jobs.filter(x=>x.status==='completed').length;$('working').textContent=jobs.filter(x=>['queued','processing'].includes(x.status)).length;$('review').textContent=jobs.filter(x=>x.status==='needs_review').length;
+$('jobs').innerHTML=jobs.length?jobs.map(j=>`<div class="job"><div class="jobtop"><b>${esc(j.topic)}</b><span class="pill">${statusLabel(j.status)}</span></div><div class="bar"><span style="width:${j.progress}%"></span></div><div class="small">${esc(j.stage)} · %${j.progress} · Kalite: ${j.quality_score||'—'}</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="secondary" onclick="showJob(${j.id})">Detay</button>${j.output_path?`<a href="/api/jobs/${j.id}/video" target="_blank"><button>Videoyu aç</button></a>`:''}</div></div>`).join(''):'<p class="muted">Henüz üretim yok.</p>'}catch(e){$('systemState').textContent='Backend bağlantısı yok'}}
+async function showJob(id){const j=await api('/api/jobs/'+id);$('detail').hidden=false;let s=j.script||{};$('detailBody').innerHTML=`<b>${esc(j.topic)}</b><p>${esc(j.quality_notes||j.error||'')}</p><p class="small">${esc(j.publish_status)}</p>${j.output_path?`<video controls playsinline src="/api/jobs/${id}/video"></video><p><a href="/api/jobs/${id}/video" download>MP4 dosyasını aç / indir</a></p>`:''}<h3>${esc(s.title||'Senaryo')}</h3><p>${esc(s.hook||'')}</p>${(s.scenes||[]).map((x,i)=>`<p><b>Sahne ${i+1}:</b> ${esc(x.narration)}</p>`).join('')}<p class="small">${esc(s.caption||'')} ${(s.hashtags||[]).map(esc).join(' ')}</p>`;$('detail').scrollIntoView({behavior:'smooth'})}
+$('createForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('createBtn');btn.disabled=true;btn.textContent='İş oluşturuluyor…';try{const platforms=[...document.querySelectorAll('.checks input:checked')].map(x=>x.value);if(!platforms.length)throw new Error('En az bir platform seç.');await api('/api/jobs',{method:'POST',body:JSON.stringify({topic:$('topic').value,category:$('category').value,style:$('style').value,duration:+$('duration').value,platforms})});$('topic').value='';await loadJobs()}catch(err){alert(err.message)}finally{btn.disabled=false;btn.textContent='AI video üretimini başlat'}});
+(async()=>{try{const h=await api('/api/health');$('systemState').textContent=h.ai_configured?'AI bağlantısı hazır':'Demo / API anahtarı bekleniyor'}catch(e){$('systemState').textContent='Backend bağlantısı yok'}loadJobs();setInterval(loadJobs,5000)})();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+</script></body></html>

@@ -1,0 +1,22 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc
+data/
+*.db
+*.sqlite3
+.pytest_cache/
+# Flutter / Android
+android_app/build/
+android_app/.dart_tool/
+android_app/.flutter-plugins*
+android_app/android/.gradle/
+android_app/android/local.properties
+android_app/android/key.properties
+android_app/android/app/google-services.json
+*.jks
+*.keystore
+dist/
+node_modules/

@@ -1,0 +1,17 @@
+# AI Video Factory Pro V2 — çalışma zamanı bağımlılıkları
+fastapi>=0.115,<1
+uvicorn[standard]>=0.34,<1
+pydantic>=2.11,<3
+pydantic-settings>=2.9,<3
+sqlalchemy>=2.0.40,<2.1
+alembic>=1.15,<2
+psycopg[binary]>=3.2,<4
+celery[redis]>=5.5,<6
+redis>=5.2,<7
+httpx>=0.28,<1
+boto3>=1.35,<2
+cryptography>=44
+PyJWT>=2.10,<3
+argon2-cffi>=23.1
+numpy>=2.0
+python-multipart>=0.0.20
