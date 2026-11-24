@@ -114,7 +114,7 @@ def generate_ideas(db: Session, ctx: CallContext, user_id: str, *, category: str
             '"score":0-100,"reason":"puanın gerekçesi"}]}')
     out = _llm(ctx, LLMRequest(system=system, user=user, max_tokens=2500, task="ideas",
                                params={"category": category, "count": count + 3, "trends": trends or []}),
-               ctx.settings.get("providers", {}).get("llm", ["openai", "anthropic", "template"]), user_id, None)
+               ctx.settings.get("providers", {}).get("llm", ["openai", "anthropic", "compat", "template"]), user_id, None)
     try:
         raw = parse_json(out.result.data).get("ideas", [])
     except (json.JSONDecodeError, AttributeError) as e:
@@ -170,7 +170,7 @@ def generate_script(ctx: CallContext, user_id: str, project_id: str, *, topic: s
             '"composition":"","transition":"fade|dissolve|slide|wipe|zoom|circle","on_screen_text":"","stock_query":"2-4 İngilizce anahtar kelime"}],'
             '"cta":"","description":"","hashtags":["#"],"style_bible":"tüm sahnelerde tutarlı karakter/mekân/renk tarifi (EN)",'
             '"facts_to_verify":[""],"claims_risk":"low|medium|high","sources":[""]}')
-    prefs = ctx.settings.get("providers", {}).get("llm", ["openai", "anthropic", "template"])
+    prefs = ctx.settings.get("providers", {}).get("llm", ["openai", "anthropic", "compat", "template"])
     last_err = ""
     for attempt in range(2):
         out = _llm(ctx, LLMRequest(system=system, user=user + (f"\n\nÖnceki yanıt geçersizdi: {last_err}. Şemaya tam uy." if last_err else ""),
@@ -214,7 +214,7 @@ def safety_review_fn(ctx: CallContext, user_id: str, project_id: str):
         user = (f"Kategori: {payload.get('category')}\nBaşlık: {payload.get('title')}\nMetin:\n{payload.get('text')}\n\n"
                 'Şema: {"flagged":bool,"severity":"none|low|medium|high|critical","misleading":bool,"reasons":["..."]}')
         out = router.run("llm", ctx, LLMRequest(system=system, user=user, max_tokens=500, task="moderation", json_mode=True),
-                         preferred=ctx.settings.get("providers", {}).get("llm", ["openai", "anthropic"]), only_ai=True,
+                         preferred=ctx.settings.get("providers", {}).get("llm", ["openai", "anthropic", "compat"]), only_ai=True,
                          db_factory=session_scope, guard=budget_guard(user_id, project_id))
         d = parse_json(out.result.data)
         d["provider"] = out.provider

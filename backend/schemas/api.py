@@ -145,6 +145,10 @@ class IdeaGenerateIn(BaseModel):
 
 class CredentialIn(BaseModel):
     secret: str = Field(min_length=8, max_length=500)
+    base_url: str | None = Field(default=None, max_length=300)  # yalnızca özel LLM ("compat")
+    model: str | None = Field(default=None, max_length=120)
+    in_per_m: float | None = Field(default=None, ge=0, le=1000)
+    out_per_m: float | None = Field(default=None, ge=0, le=1000)
 
 
 class PreferencesIn(BaseModel):

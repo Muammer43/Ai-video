@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     elevenlabs_api_key: str = ""
     pexels_api_key: str = ""
     pixabay_api_key: str = ""
+    compat_llm_api_key: str = ""  # OpenAI uyumlu özel LLM (Gemini/Groq/OpenRouter…)
+    compat_llm_base_url: str = ""
+    compat_llm_model: str = ""
 
     # --- model adları (sağlayıcılar model kapattığı için yapılandırılabilir) ---
     openai_text_model: str = "gpt-4.1-mini"

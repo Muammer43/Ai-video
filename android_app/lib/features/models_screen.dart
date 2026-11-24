@@ -6,7 +6,7 @@ import '../core/state.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
-const _credNames = {'openai': 'OpenAI', 'anthropic': 'Anthropic', 'fal': 'fal.ai', 'runway': 'Runway', 'replicate': 'Replicate', 'elevenlabs': 'ElevenLabs', 'pexels': 'Pexels', 'pixabay': 'Pixabay', 'youtube_data': 'YouTube Data API (trend)'};
+const _credNames = {'openai': 'OpenAI', 'anthropic': 'Anthropic', 'fal': 'fal.ai', 'runway': 'Runway', 'replicate': 'Replicate', 'elevenlabs': 'ElevenLabs', 'pexels': 'Pexels', 'pixabay': 'Pixabay', 'youtube_data': 'YouTube Data API (trend)', 'compat': 'Özel LLM (OpenAI uyumlu)'};
 
 class ModelsScreen extends ConsumerWidget {
   const ModelsScreen({super.key});
@@ -29,8 +29,12 @@ class ModelsScreen extends ConsumerWidget {
               Text('Sıra: ${((prefs[kind] ?? []) as List).join(' → ')}', style: const TextStyle(fontSize: 11, color: AppColors.muted)),
               for (final p in provs.where((p) => p['kind'] == kind)) _ProviderCard(p: p, api: api, onChanged: () => ref.invalidate(providersListProvider)),
             ],
-            const SectionTitle('Diğer anahtarlar'),
-            Card(child: ListTile(title: const Text('YouTube Data API anahtarı'), subtitle: const Text('Trend araştırması (videos.list mostPopular) için', style: TextStyle(fontSize: 11.5)), trailing: const Icon(Icons.key), onTap: () => _setKey(context, ref, 'youtube_data'))),
+            const SectionTitle('Stok video ve diğer anahtarlar'),
+            Card(child: Column(children: [
+              ListTile(title: const Text('Pixabay anahtarı (ücretsiz stok video)'), subtitle: const Text('Hibrit modda gerçek video görüntüleri getirir. pixabay.com/api/docs adresinden ücretsiz anahtar alın.', style: TextStyle(fontSize: 11.5)), trailing: const Icon(Icons.key), onTap: () => _setKey(context, ref, 'pixabay')),
+              ListTile(title: const Text('Pexels anahtarı (ücretsiz stok video)'), subtitle: const Text('Pexels şu an yeni anahtar vermeyebilir; zaten anahtarınız varsa girin.', style: TextStyle(fontSize: 11.5)), trailing: const Icon(Icons.key), onTap: () => _setKey(context, ref, 'pexels')),
+              ListTile(title: const Text('YouTube Data API anahtarı'), subtitle: const Text('Trend araştırması (videos.list mostPopular) için', style: TextStyle(fontSize: 11.5)), trailing: const Icon(Icons.key), onTap: () => _setKey(context, ref, 'youtube_data')),
+            ])),
           ]);
         },
       ),
@@ -61,7 +65,51 @@ class ModelsScreen extends ConsumerWidget {
   }
 }
 
+Future<void> _setCompat(BuildContext context, WidgetRef ref) async {
+  final key = TextEditingController(), url = TextEditingController(), model = TextEditingController();
+  const presets = {
+    'Google Gemini': 'https://generativelanguage.googleapis.com/v1beta/openai',
+    'Groq': 'https://api.groq.com/openai/v1',
+    'OpenRouter': 'https://openrouter.ai/api/v1',
+    'Diğer (kendi adresim)': '',
+  };
+  var sel = 'Google Gemini';
+  url.text = presets[sel]!;
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (_) => StatefulBuilder(
+      builder: (c, set) => AlertDialog(
+        title: const Text('Özel LLM (OpenAI uyumlu)'),
+        content: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            DropdownButtonFormField<String>(
+              initialValue: sel,
+              decoration: const InputDecoration(labelText: 'Sağlayıcı'),
+              items: [for (final k in presets.keys) DropdownMenuItem(value: k, child: Text(k))],
+              onChanged: (v) => set(() { sel = v!; url.text = presets[v]!; }),
+            ),
+            const SizedBox(height: 10),
+            TextField(controller: url, keyboardType: TextInputType.url, decoration: const InputDecoration(labelText: 'Adres (https://…)')),
+            const SizedBox(height: 10),
+            TextField(controller: model, autocorrect: false, decoration: const InputDecoration(labelText: 'Model adı', helperText: 'Sağlayıcının güncel model listesinden kopyalayın')),
+            const SizedBox(height: 10),
+            TextField(controller: key, obscureText: true, autocorrect: false, enableSuggestions: false, decoration: const InputDecoration(labelText: 'API anahtarı')),
+            const SizedBox(height: 8),
+            const Text('Anahtar sunucuda şifrelenerek saklanır. Ücretsiz katmanlarda gönderdiğiniz içerik sağlayıcı tarafından ürün geliştirmede kullanılabilir (ör. Gemini ücretsiz katmanı) — hassas içerik girmeyin. Ücretsiz limitler ve model adları sağlayıcıdan kontrol edilmelidir.', style: TextStyle(fontSize: 11, color: AppColors.amber)),
+          ]),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Vazgeç')), FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Kaydet'))],
+      ),
+    ),
+  );
+  if (ok == true && context.mounted) {
+    final saved = await run(context, () => ref.read(apiProvider).put('/api/v1/providers/compat/credential', body: {'secret': key.text.trim(), 'base_url': url.text.trim(), 'model': model.text.trim()}), ok: 'Kaydedildi — "Anahtarı sına" ile deneyin');
+    if (saved) ref.invalidate(providersListProvider);
+  }
+}
+
 Future<void> _setKey(BuildContext context, WidgetRef ref, String name) async {
+  if (name == 'compat') return _setCompat(context, ref);
   final c = TextEditingController();
   final ok = await showDialog<bool>(
     context: context,

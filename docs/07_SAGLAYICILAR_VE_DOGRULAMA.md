@@ -44,3 +44,14 @@ Resmî dokümanlar **2026-11-24** tarihinde okundu (paralel okuma ajanlarıyla).
 | Tarayıcı otomasyonu / resmî olmayan yayın | Bilerek **yok** |
 | Android'de kapalı-uygulama push (FCM istemcisi) | Sunucu hazır; istemci Firebase kurulumu gerektirir (docs/04) |
 | Web konsolu | Dashboard + üretim + projeler (onay/iptal/yeniden dene); 10 ekranın tamamı yalnızca Android uygulamasında |
+
+## Ücretsiz / düşük maliyetli yol (2026-11-24 doğrulaması)
+Genel "OpenAI uyumlu" LLM sağlayıcısı (`compat`) eklendi: kullanıcı adres + model + anahtar girer (uygulama → AI Modelleri → Özel LLM). Adres yalnızca `https` ve genel (iç ağ/loopback/link-local olmayan) olabilir (SSRF önlemi). Sağlayıcı `json_object` kipini reddederse istek ek yönergeyle otomatik yeniden denenir. Fiyat bilinmediğinden varsayılan 0 USD kaydedilir ve `price_verified=false` etiketlenir (isteğe bağlı `in_per_m/out_per_m`).
+| Servis | Doğrulanan | Dikkat |
+|---|---|---|
+| Google Gemini (OpenAI uyumlu uç: `https://generativelanguage.googleapis.com/v1beta/openai/`) | `chat/completions` destekli; bazı modeller ücretsiz katmanda | **Ücretsiz katmanda içerik Google ürünlerini geliştirmek için kullanılabilir.** `json_object` kipi dokümanda yok (yedek yol çalışır). Türkiye'de kullanılabilirlik doğrulanamadı. Limitler AI Studio'da |
+| Groq (`https://api.groq.com/openai/v1`) | OpenAI uyumlu; ücretsiz plan var | Ücretsiz plan limitleri dokümanda net değil (console.groq.com/settings/limits) |
+| OpenRouter (`https://openrouter.ai/api/v1`) | `:free` ekli modeller; ücretsiz hesapta günde 50 istek | Doğrulanmış, Türkçe/JSON'da iyi bir ücretsiz model adı bulunamadı |
+| **Pexels** stok video | Anahtar ücretsiz tanımlanıyor | **Şu an yeni anahtar verilmesi duraklatılmış** ("issuance paused"); zaten anahtarı olanlar kullanabilir. Atıf zorunlu |
+| Pixabay stok video | Anahtar ücretsiz; ücretsiz kayıt | Bu oturumda kayıt akışı doğrulanmadı; atıf istenir, toplu indirme yasak |
+Model adları sağlayıcılar tarafından sık değişir: koda gömülmedi; kullanıcı sağlayıcının güncel listesinden girer.

@@ -23,7 +23,7 @@ def defaults() -> dict:
         },
         "quality": {"auto_publish_min": 90, "low_risk_min": 80, "review_min": 60},
         "providers": {
-            "llm": ["openai", "anthropic", "template"],
+            "llm": ["openai", "anthropic", "compat", "template"],
             "image": ["openai", "fal", "procedural"],
             "video": ["fal", "runway", "replicate", "stock", "ken_burns"],
             "tts": ["openai", "elevenlabs", "espeak"],

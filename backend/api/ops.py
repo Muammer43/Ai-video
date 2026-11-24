@@ -132,7 +132,16 @@ def provider_prefs(body: PreferencesIn, request: Request, db: Session = Depends(
 def provider_cred_set(name: str, body: CredentialIn, request: Request, db: Session = Depends(get_db), user: User = Depends(current_user)):
     if name not in KNOWN_PROVIDERS and name != "youtube_data":
         raise AppError("Bilinmeyen sağlayıcı", code="bad_provider", status_code=422)
-    row = set_credential(db, user.id, name, body.secret.strip())
+    extra = None
+    if name == "compat":
+        from ..providers.llm.compat_llm import validate_base_url
+        if not body.base_url or not body.model:
+            raise AppError("Özel LLM için base_url ve model zorunlu", code="validation_error", status_code=422)
+        try:
+            extra = {"base_url": validate_base_url(body.base_url), "model": body.model.strip(), "in_per_m": body.in_per_m or 0, "out_per_m": body.out_per_m or 0}
+        except ValueError as e:
+            raise AppError(str(e), code="validation_error", status_code=422) from e
+    row = set_credential(db, user.id, name, body.secret.strip(), extra)
     audit(db, request, user.id, "provider.credential_set", "provider", name)  # değer loglanmaz
     return {"provider": name, "hint": row.hint}
 
@@ -157,6 +166,15 @@ def provider_test(name: str, db: Session = Depends(get_db), user: User = Depends
     cr = CredentialResolver(db, user.id)
     if not cr.has(name):
         return {"ok": False, "detail": "Anahtar tanımlı değil"}
+    if name == "compat":  # küçük gerçek bir çağrı (birkaç token)
+        from ..providers.base import CallContext, LLMRequest
+        from ..providers.llm.compat_llm import CompatLLM
+        try:
+            r = CompatLLM().execute(CallContext(user_id=user.id, project_id=None, creds=cr, work_dir=Path(".")),
+                                    LLMRequest(system="Sadece JSON döndür.", user='{"ok": true} döndür.', max_tokens=20))
+            return {"ok": True, "detail": f"Yanıt alındı ({r.model})"}
+        except ProviderError as e:
+            return {"ok": False, "detail": str(e)[:200]}
     if name not in TESTS:
         return {"ok": None, "detail": "Bu sağlayıcı için ücretsiz/zararsız doğrulama uç noktası yok; anahtar yalnızca ilk gerçek üretimde sınanır."}
     method, url, hdr = TESTS[name]

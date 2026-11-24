@@ -11,7 +11,7 @@ from ..models import ProviderCredential
 ENV_KEYS = {
     "openai": "openai_api_key", "anthropic": "anthropic_api_key", "fal": "fal_key", "runway": "runway_api_key",
     "replicate": "replicate_api_token", "elevenlabs": "elevenlabs_api_key", "pexels": "pexels_api_key",
-    "pixabay": "pixabay_api_key",
+    "pixabay": "pixabay_api_key", "compat": "compat_llm_api_key",
 }
 KNOWN_PROVIDERS = set(ENV_KEYS)
 
@@ -42,8 +42,26 @@ class CredentialResolver:
     def has(self, provider: str) -> bool:
         return bool(self.get(provider))
 
+    def extra(self, provider: str) -> dict:
+        """Kimlik bilgisiyle saklanan ek alanlar (ör. özel LLM için base_url/model). Kullanıcı kaydı yoksa sunucu ortamı."""
+        key = "_extra:" + provider
+        if key in self._cache:  # type: ignore[comparison-overlap]
+            return self._cache[key]  # type: ignore[return-value]
+        out: dict = {}
+        if self.db is not None and self.user_id:
+            row = self.db.execute(select(ProviderCredential).where(
+                ProviderCredential.user_id == self.user_id, ProviderCredential.provider == provider)).scalar_one_or_none()
+            if row and row.extra:
+                out = dict(row.extra)
+        if not out and provider == "compat":
+            s = get_settings()
+            if s.compat_llm_base_url:
+                out = {"base_url": s.compat_llm_base_url, "model": s.compat_llm_model}
+        self._cache[key] = out  # type: ignore[assignment]
+        return out
 
-def set_credential(db: Session, user_id: str, provider: str, secret: str) -> ProviderCredential:
+
+def set_credential(db: Session, user_id: str, provider: str, secret: str, extra: dict | None = None) -> ProviderCredential:
     row = db.execute(select(ProviderCredential).where(
         ProviderCredential.user_id == user_id, ProviderCredential.provider == provider)).scalar_one_or_none()
     if row is None:
@@ -51,6 +69,8 @@ def set_credential(db: Session, user_id: str, provider: str, secret: str) -> Pro
         db.add(row)
     row.encrypted_secret = encrypt_secret(secret)
     row.hint = mask_secret(secret)
+    if extra is not None:
+        row.extra = extra
     db.commit()
     return row
 

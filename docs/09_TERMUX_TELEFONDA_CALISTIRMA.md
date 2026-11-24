@@ -33,6 +33,10 @@ Bilgisayar/VPS yoksa: backend **telefonda Termux** içinde çalışır, Android 
 6. **Android uygulamasını** açın → sunucu adresi `http://127.0.0.1:8000` → "Bağlantıyı sına" ✅ → "Yeni hesap oluştur".
 7. Kalıcı çalışma için: Android Ayarlar → Uygulamalar → Termux → Pil → **Kısıtlama yok**; Termux bildirimindeki "Wake lock"u açık tutun.
 
+## Ücretsiz/ucuz daha iyi sonuç
+1. **Stok video:** AI Modelleri → "Stok video ve diğer anahtarlar" → **Pixabay** anahtarı (ücretsiz kayıt). Studio'da **Hibrit** modu seçin → sahneler gerçek video görüntüleriyle dolar. (Pexels şu an yeni anahtar vermiyor.)
+2. **Gerçek senaryo:** AI Modelleri → LLM bölümünde **Özel LLM (OpenAI uyumlu)** → Gemini/Groq/OpenRouter seçin, model adını sağlayıcıdan kopyalayın, anahtarı girin. Ücretsiz katmanlarda içerik sağlayıcıda ürün geliştirmede kullanılabilir (Gemini). Ses yine robotik kalır; videolar bu yüzden "inceleme gerekli" olur — doğal ses için ücretli OpenAI/ElevenLabs anahtarı gerekir.
+
 ## AI anahtarları
 Uygulama → **AI Modelleri** → sağlayıcıya **Anahtar ekle**. Tek `OpenAI` anahtarı metin + görsel + seslendirme + altyazı zamanlamasını kapsar (ücretlidir; varsayılan video başı bütçe $2, günlük $5 — Ayarlar'dan değiştirin). Gerçek hareketli AI video için `fal.ai` veya `Runway` anahtarı ekleyin; yoksa sahneler "AI görsel + hareket" olarak etiketlenir (AI video değildir).
 Anahtarsız üretim yalnızca hattı sınar (şablon metin, robotik ses): bu videolar **otomatik yayına alınmaz**.

@@ -216,3 +216,21 @@ def test_v1_compat_endpoints(client, no_dispatch):
     j = client.get(f"/api/jobs/{jid}", headers=h).json()
     assert j["status"] == "queued" and j["topic"].startswith("GTA 6") and "v2" in j
     assert client.get("/api/health").json()["app"]
+
+
+def test_compat_llm_credential_validation_ssrf_and_use(client):
+    """Özel (OpenAI uyumlu) LLM: adres doğrulama (SSRF), şifreli saklama, ayarlanınca 'yapılandırıldı'."""
+    h, _ = register(client)
+    P = "/api/v1/providers/compat/credential"
+    assert client.put(P, headers=h, json={"secret": "key-123456789"}).status_code == 422  # base_url/model zorunlu
+    for bad in ["http://api.example.com/v1", "https://localhost/v1", "https://127.0.0.1/v1", "https://10.0.0.5/v1", "https://169.254.169.254/latest", "https://intranet/v1", "ftp://x.y/z"]:
+        assert client.put(P, headers=h, json={"secret": "key-123456789", "base_url": bad, "model": "m"}).status_code == 422, bad
+    r = client.put(P, headers=h, json={"secret": "key-123456789", "base_url": "https://api.groq.example.com/openai/v1/", "model": "llama-x"})
+    assert r.status_code == 200
+    prov = {(x["kind"], x["name"]): x for x in client.get("/api/v1/providers", headers=h).json()["providers"]}
+    assert prov[("llm", "compat")]["configured"] is True and prov[("llm", "compat")]["is_ai"] is True
+    from backend.database.session import session_scope
+    from backend.models import ProviderCredential
+    with session_scope() as db:
+        row = db.query(ProviderCredential).filter_by(provider="compat").one()
+        assert "key-1234" not in row.encrypted_secret and row.extra["base_url"] == "https://api.groq.example.com/openai/v1"

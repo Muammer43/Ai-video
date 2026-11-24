@@ -81,3 +81,43 @@ def test_budget_blocks_expensive_calls(user, env, monkeypatch):
         assert p.status == "FAILED" and p.error_code == "BUDGET_EXCEEDED", (p.status, p.error)
         from backend.models import Notification
         assert db.execute(select(Notification).where(Notification.user_id == user, Notification.kind.in_(["budget", "job_failed"]))).first()
+
+
+def test_compat_llm_drives_pipeline_with_stock_footage(user, env, monkeypatch):
+    """MOCK: yalnızca özel LLM + Pexels anahtarı (ücretsiz yol) — gerçek senaryo ve stok görüntüyle hibrit üretim."""
+    import httpx, json
+    from backend.core import config
+    from backend.services.credentials import set_credential
+    from tests.mocks import default_script, media
+    monkeypatch.setenv("PEXELS_API_KEY", "pexels-test-key")
+    config.reset_settings_cache()
+    with session_scope() as db:
+        set_credential(db, user, "compat", "free-key-123456", {"base_url": "https://llm.example.com/v1", "model": "free-model", "in_per_m": 0, "out_per_m": 0})
+    seen = {"json_mode_rejected": 0}
+
+    def handler(req: httpx.Request):
+        h = req.url.host
+        if h == "llm.example.com":
+            body = json.loads(req.content)
+            if "response_format" in body and not seen["json_mode_rejected"]:
+                seen["json_mode_rejected"] = 1  # json_object desteklemeyen sağlayıcı: ilk istek 400, yeniden denenir
+                return httpx.Response(400, json={"error": "response_format unsupported"})
+            u = body["messages"][1]["content"]
+            out = {"flagged": False, "severity": "none", "misleading": False, "reasons": []} if '"flagged"' in u else default_script(5)
+            return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps(out, ensure_ascii=False)}}], "usage": {"prompt_tokens": 500, "completion_tokens": 400, "total_tokens": 900}})
+        if h == "api.pexels.com":
+            return httpx.Response(200, json={"videos": [{"id": 10 + i, "duration": 8, "url": "https://pexels.com/v", "user": {"name": "J"}, "video_files": [{"file_type": "video/mp4", "link": "https://videos.pexels.com/v.mp4", "height": 1280, "width": 720}]} for i in range(6)]})
+        if h == "videos.pexels.com":
+            return httpx.Response(200, content=media("mp4", 2))
+        return httpx.Response(404)
+    H.set_transport_factory(lambda: httpx.MockTransport(handler))
+    pid = make_project(user, media_mode="hybrid", quality_tier="standard", duration_target=20)
+    run_project(pid)
+    with session_scope() as db:
+        p = db.get(Project, pid)
+        origins = [s.origin for s in db.execute(select(Scene).where(Scene.project_id == pid)).scalars()]
+        assert p.script["_meta"] == {"provider": "compat", "is_ai": True}
+        assert origins.count("stock") >= 3 and "procedural" not in origins  # ücretsiz stok görüntü kullanıldı
+        assert seen["json_mode_rejected"] == 1
+        assert "template_script" not in {f["id"] for f in p.quality_report["risk_flags"]}
+        assert "offline_voice" in {f["id"] for f in p.quality_report["risk_flags"]}  # ses hâlâ robotik → inceleme (dürüst)
