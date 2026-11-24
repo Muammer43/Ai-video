@@ -154,3 +154,59 @@ def test_stock_falls_back_to_english_category_queries_without_llm(user, env, mon
         lic = [a.license for a in db.query(__import__("backend.models", fromlist=["Asset"]).Asset).filter_by(project_id=pid, kind="video")]
         assert all(l.get("type") == "Pixabay Content License" and l.get("commercial_use") for l in lic)
     assert any(q == "science laboratory" or q in ("space galaxy stars", "planet earth from space", "microscope cells") for q in queries)
+
+
+def test_free_gemini_stack_can_auto_approve(user, env, monkeypatch):
+    """MOCK: tek Gemini anahtarı (metin + TTS) + Pixabay → AI olmayan hiçbir bileşen kalmaz; kalite eşiği geçerse otomatik onay.
+    Gemini TTS isteğinin dokümandaki Interactions biçimine uyduğu doğrulanır (canlı çağrı DOĞRULANMADI)."""
+    import base64, httpx, json
+    from backend.core import config
+    from backend.services.credentials import set_credential
+    from tests.mocks import default_script, media
+    config.reset_settings_cache()
+    with session_scope() as db:
+        set_credential(db, user, "gemini", "gemini-key-1234567890")
+        set_credential(db, user, "pixabay", "pixabay-key-123456")
+    seen = {"tts": [], "llm_models": set()}
+
+    def handler(req: httpx.Request):
+        h, path = req.url.host, req.url.path
+        if h == "generativelanguage.googleapis.com" and path.endswith("/chat/completions"):
+            body = json.loads(req.content)
+            seen["llm_models"].add(body["model"])
+            if body["model"] == "gemini-3.8-flash":  # varsayılan ad bulunamadı → models.list ile keşif denenmeli
+                return httpx.Response(404, json={"error": "model not found"})
+            u = body["messages"][1]["content"]
+            out = {"flagged": False, "severity": "none", "misleading": False, "reasons": []} if '"flagged"' in u else default_script(5)
+            return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps(out, ensure_ascii=False)}}], "usage": {"prompt_tokens": 5, "completion_tokens": 5, "total_tokens": 10}})
+        if h == "generativelanguage.googleapis.com" and path == "/v1beta/models":
+            return httpx.Response(200, json={"models": [{"name": "models/gemini-9-flash", "supportedGenerationMethods": ["generateContent"]},
+                                                         {"name": "models/gemini-9-flash-tts", "supportedGenerationMethods": ["generateContent"]},
+                                                         {"name": "models/gemini-9-pro", "supportedGenerationMethods": ["generateContent"]}]})
+        if h == "generativelanguage.googleapis.com" and path == "/v1beta/interactions":
+            assert req.headers["x-goog-api-key"] == "gemini-key-1234567890"
+            body = json.loads(req.content)
+            seen["tts"].append(body)
+            wav = media("mp3", len(seen["tts"]) % 3)  # gerçek ses baytları (mp3 de FFmpeg ile okunur)
+            return httpx.Response(200, json={"steps": [{"type": "model_output", "content": [{"type": "audio", "data": base64.b64encode(wav).decode()}]}]})
+        if h == "pixabay.com":
+            return httpx.Response(200, json={"hits": [{"id": 900 + i + len(str(req.url)) % 50, "duration": 9, "pageURL": "https://pixabay.com/v", "user": "u", "videos": {"medium": {"url": "https://cdn.pixabay.com/v.mp4"}}} for i in range(4)]})
+        if h == "cdn.pixabay.com":
+            return httpx.Response(200, content=media("mp4", 1))
+        return httpx.Response(404)
+    H.set_transport_factory(lambda: httpx.MockTransport(handler))
+    pid = make_project(user, media_mode="hybrid", quality_tier="standard", duration_target=20, category="Bilim")
+    run_project(pid)
+    b = seen["tts"][0]
+    assert b["model"] == "gemini-3.8-flash-tts" and b["response_format"] == {"type": "audio"}
+    assert b["input"][0]["type"] == "user_input" and b["input"][0]["content"][0]["type"] == "text"
+    assert b["generation_config"]["speech_config"][0]["voice"] in ("Kore", "Aoede", "Leda")
+    assert "gemini-9-flash" in seen["llm_models"]  # model keşfi çalıştı
+    with session_scope() as db:
+        p = db.get(Project, pid)
+        flags = {f["id"] for f in p.quality_report["risk_flags"]}
+        assert p.script["_meta"] == {"provider": "gemini", "is_ai": True}
+        assert not ({"template_script", "offline_voice", "placeholder_visuals", "safety_llm_unavailable"} & flags), flags
+        assert p.status in ("APPROVED", "NEEDS_REVIEW"), (p.status, p.error)
+        scenes = db.execute(select(Scene).where(Scene.project_id == pid)).scalars().all()
+        assert all(s.meta["tts_provider"] == "gemini" and s.meta["tts_is_ai"] for s in scenes)

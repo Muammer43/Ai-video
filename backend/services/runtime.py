@@ -43,7 +43,7 @@ def make_ctx(user_id: str | None, project_id: str | None, work: Path) -> CallCon
     with session_scope() as db:
         creds = CredentialResolver(db, user_id)
         # önbelleği doldur: oturum kapandıktan sonra da çalışsın
-        for name in ("openai", "anthropic", "fal", "runway", "replicate", "elevenlabs", "pexels", "pixabay", "youtube_data", "compat"):
+        for name in ("openai", "anthropic", "fal", "runway", "replicate", "elevenlabs", "pexels", "pixabay", "youtube_data", "compat", "gemini"):
             creds.get(name)
         creds.extra("compat")
         settings = get_user_settings(db, user_id) if user_id else {}

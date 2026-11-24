@@ -11,7 +11,7 @@ from ..models import ProviderCredential
 ENV_KEYS = {
     "openai": "openai_api_key", "anthropic": "anthropic_api_key", "fal": "fal_key", "runway": "runway_api_key",
     "replicate": "replicate_api_token", "elevenlabs": "elevenlabs_api_key", "pexels": "pexels_api_key",
-    "pixabay": "pixabay_api_key", "compat": "compat_llm_api_key",
+    "pixabay": "pixabay_api_key", "compat": "compat_llm_api_key", "gemini": "gemini_api_key",
 }
 KNOWN_PROVIDERS = set(ENV_KEYS)
 

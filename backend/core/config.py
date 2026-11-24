@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     elevenlabs_api_key: str = ""
     pexels_api_key: str = ""
     pixabay_api_key: str = ""
+    gemini_api_key: str = ""  # Google AI Studio anahtarı: ücretsiz katmanda Gemini metin + TTS
+    gemini_text_model: str = "gemini-3.8-flash"
+    gemini_tts_model: str = "gemini-3.8-flash-tts"
+    gemini_tts_fallback_model: str = "gemini-3.8-flash-lite-tts"
     compat_llm_api_key: str = ""  # OpenAI uyumlu özel LLM (Gemini/Groq/OpenRouter…)
     compat_llm_base_url: str = ""
     compat_llm_model: str = ""

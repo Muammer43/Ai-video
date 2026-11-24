@@ -158,6 +158,7 @@ TESTS = {
     "anthropic": ("GET", "https://api.anthropic.com/v1/models", lambda k: {"x-api-key": k, "anthropic-version": "2023-06-01"}),
     "elevenlabs": ("GET", "https://api.elevenlabs.io/v1/user", lambda k: {"xi-api-key": k}),
     "pexels": ("GET", "https://api.pexels.com/v1/videos/search?query=sea&per_page=1", lambda k: {"Authorization": k}),
+    "gemini": ("GET", "https://generativelanguage.googleapis.com/v1beta/models", lambda k: {"x-goog-api-key": k}),
 }
 
 

@@ -6,7 +6,7 @@ import '../core/state.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
-const _credNames = {'openai': 'OpenAI', 'anthropic': 'Anthropic', 'fal': 'fal.ai', 'runway': 'Runway', 'replicate': 'Replicate', 'elevenlabs': 'ElevenLabs', 'pexels': 'Pexels', 'pixabay': 'Pixabay', 'youtube_data': 'YouTube Data API (trend)', 'compat': 'Özel LLM (OpenAI uyumlu)'};
+const _credNames = {'openai': 'OpenAI', 'anthropic': 'Anthropic', 'fal': 'fal.ai', 'runway': 'Runway', 'replicate': 'Replicate', 'elevenlabs': 'ElevenLabs', 'pexels': 'Pexels', 'pixabay': 'Pixabay', 'youtube_data': 'YouTube Data API (trend)', 'compat': 'Özel LLM (OpenAI uyumlu)', 'gemini': 'Google Gemini'};
 
 class ModelsScreen extends ConsumerWidget {
   const ModelsScreen({super.key});
@@ -31,6 +31,13 @@ class ModelsScreen extends ConsumerWidget {
             ],
             const SectionTitle('Stok video ve diğer anahtarlar'),
             Card(child: Column(children: [
+              ListTile(
+                leading: const Icon(Icons.auto_awesome, color: AppColors.green),
+                title: const Text('Gemini anahtarı (ücretsiz senaryo + doğal ses)'),
+                subtitle: const Text('aistudio.google.com üzerinden ücretsiz anahtar. Tek anahtar hem senaryoyu hem Türkçe seslendirmeyi yapar. Ücretsiz katmanda içerik Google tarafından ürün geliştirmede kullanılabilir; ticari kullanım koşulları dokümanda belirtilmemiş — kendiniz kontrol edin.', style: TextStyle(fontSize: 11.5)),
+                trailing: const Icon(Icons.key),
+                onTap: () => _setKey(context, ref, 'gemini'),
+              ),
               ListTile(title: const Text('Pixabay anahtarı (ücretsiz stok video)'), subtitle: const Text('Hibrit modda gerçek video görüntüleri getirir. pixabay.com/api/docs adresinden ücretsiz anahtar alın.', style: TextStyle(fontSize: 11.5)), trailing: const Icon(Icons.key), onTap: () => _setKey(context, ref, 'pixabay')),
               ListTile(title: const Text('Pexels anahtarı (ücretsiz stok video)'), subtitle: const Text('Pexels şu an yeni anahtar vermeyebilir; zaten anahtarınız varsa girin.', style: TextStyle(fontSize: 11.5)), trailing: const Icon(Icons.key), onTap: () => _setKey(context, ref, 'pexels')),
               ListTile(title: const Text('YouTube Data API anahtarı'), subtitle: const Text('Trend araştırması (videos.list mostPopular) için', style: TextStyle(fontSize: 11.5)), trailing: const Icon(Icons.key), onTap: () => _setKey(context, ref, 'youtube_data')),

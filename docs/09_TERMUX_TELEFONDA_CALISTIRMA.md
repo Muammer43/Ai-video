@@ -34,6 +34,9 @@ Bilgisayar/VPS yoksa: backend **telefonda Termux** içinde çalışır, Android 
 7. Kalıcı çalışma için: Android Ayarlar → Uygulamalar → Termux → Pil → **Kısıtlama yok**; Termux bildirimindeki "Wake lock"u açık tutun.
 
 ## Ücretsiz/ucuz daha iyi sonuç
+**En kolayı — tek Gemini anahtarı:** AI Modelleri → "Gemini anahtarı (ücretsiz senaryo + doğal ses)" → aistudio.google.com'dan alınan anahtarı girin. Hem senaryo hem Türkçe seslendirme gelir; Pixabay stok video ile birlikte video AI olmayan bileşen içermez ve kalite eşiğini geçerse otomatik onaylanabilir. Ücretsiz katmanın ticari kullanım koşulları dokümanda belirtilmemiştir; içerik Google tarafından ürün geliştirmede kullanılabilir.
+
+Ayrıntılı seçenekler:
 1. **Stok video:** AI Modelleri → "Stok video ve diğer anahtarlar" → **Pixabay** anahtarı (ücretsiz kayıt). Studio'da **Hibrit** modu seçin → sahneler gerçek video görüntüleriyle dolar. (Pexels şu an yeni anahtar vermiyor.)
 2. **Gerçek senaryo:** AI Modelleri → LLM bölümünde **Özel LLM (OpenAI uyumlu)** → Gemini/Groq/OpenRouter seçin, model adını sağlayıcıdan kopyalayın, anahtarı girin. Ücretsiz katmanlarda içerik sağlayıcıda ürün geliştirmede kullanılabilir (Gemini). Ses yine robotik kalır; videolar bu yüzden "inceleme gerekli" olur — doğal ses için ücretli OpenAI/ElevenLabs anahtarı gerekir.
 

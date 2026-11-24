@@ -55,3 +55,15 @@ Genel "OpenAI uyumlu" LLM sağlayıcısı (`compat`) eklendi: kullanıcı adres 
 | **Pexels** stok video | Anahtar ücretsiz tanımlanıyor | **Şu an yeni anahtar verilmesi duraklatılmış** ("issuance paused"); zaten anahtarı olanlar kullanabilir. Atıf zorunlu |
 | Pixabay stok video | Anahtar ücretsiz; ücretsiz kayıt | Bu oturumda kayıt akışı doğrulanmadı; atıf istenir, toplu indirme yasak |
 Model adları sağlayıcılar tarafından sık değişir: koda gömülmedi; kullanıcı sağlayıcının güncel listesinden girer.
+
+## Gemini ile tamamen ücretsiz yığın (2026-11-24 doğrulaması)
+Tek bir Google AI Studio anahtarı (`gemini` kimlik bilgisi) hem metin (OpenAI uyumlu uç, model `GEMINI_TEXT_MODEL`, bulunamazsa `models.list` ile otomatik keşif) hem **TTS** için kullanılır.
+| Bulgu (resmî doküman) | Koda yansıma |
+|---|---|
+| TTS, "Interactions API": `POST /v1beta/interactions`, `x-goog-api-key`; gövde `input[].content[].text` (+`annotations[].speech_metadata.style`), `response_format.type=audio`, `generation_config.speech_config[].voice`; yanıtta base64 ses `steps[].content[].data`; tek seferlik yanıt WAV 24 kHz mono 16-bit | `providers/tts/gemini_tts.py` (başsız PCM de işlenir) |
+| TTS modelleri `gemini-3.8-flash-tts`, `gemini-3.8-flash-lite-tts`: **ücretsiz katmanda "free of charge"**, Türkçe destekli (dil otomatik) | `GEMINI_TTS_MODEL` / `GEMINI_TTS_FALLBACK_MODEL` ile ayarlanır |
+| Ses cinsiyeti dokümanda yok | Kore/Aoede/Leda (kadın), Puck/Charon/Orus (erkek) **varsayım**; `voice.gemini_voice` ile değiştirilebilir |
+| Ücretsiz katmanda limitler (RPM/RPD) ve **ticari kullanım koşulları belirtilmemiş**; içerik Google ürünlerini geliştirmek için kullanılabilir | Uygulamada uyarı; kendi sorumluluğunuzda kontrol edin |
+| **Görsel üretim (Nano Banana) ücretsiz katmanda yok** | Gemini görsel adaptörü yazılmadı |
+| Google Cloud TTS ücretsiz kotası ve kart şartı alınamadı; Azure F0: 0.5M karakter/ay (kart/ticari koşullar belirtilmemiş); Cloudflare Workers AI'da Türkçe TTS yok | Adaptör yazılmadı (doğrulanmadı) |
+**Canlı Gemini çağrısı bu ortamda yapılmadı (mock testli).** Model adları dokümandan alındı; sağlayıcılar adları değiştirirse `.env`'den güncelleyin.
