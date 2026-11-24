@@ -4,4 +4,4 @@
 cd "$(dirname "$0")/.."
 HOST="${1:-127.0.0.1}"
 command -v termux-wake-lock >/dev/null && termux-wake-lock   # telefon uyurken Termux'un öldürülmesini azaltır
-exec .venv/bin/uvicorn backend.main:app --host "$HOST" --port 8000
+exec .venv/bin/python -m uvicorn backend.main:app --host "$HOST" --port 8000
