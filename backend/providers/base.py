@@ -77,6 +77,7 @@ class VideoRequest:
     seed: int | None = None
     scene_idx: int = 0
     stock_query: str = ""
+    category: str = ""
 
 
 @dataclass

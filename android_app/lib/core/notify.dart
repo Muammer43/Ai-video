@@ -18,11 +18,20 @@ class LiveService {
   Timer? _poll, _tick;
   bool _ready = false;
   bool enabled = true;
+  DateTime _lastBump = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// Üretim sırasında saniyede çok olay gelir; her biri tüm ekranları yeniden yüklemesin diye en sık 3 sn'de bir yenile.
+  void _bump() {
+    final now = DateTime.now();
+    if (now.difference(_lastBump) < const Duration(seconds: 3)) return;
+    _lastBump = now;
+    ref.read(tickProvider.notifier).bump();
+  }
 
   Future<void> start() async {
     await _init();
     enabled = ref.read(prefsProvider).getBool('notif_enabled') ?? true;
-    _tick = Timer.periodic(const Duration(seconds: 20), (_) => ref.read(tickProvider.notifier).bump());
+    _tick = Timer.periodic(const Duration(seconds: 20), (_) => _bump());
     _poll = Timer.periodic(const Duration(seconds: 45), (_) => _checkNotifications());
     _listenSse();
     await _checkNotifications();
@@ -42,7 +51,7 @@ class LiveService {
   void _listenSse() {
     _sse?.cancel();
     final api = ref.read(apiProvider);
-    _sse = api.sse('/api/v1/events/stream').listen((_) => ref.read(tickProvider.notifier).bump(), onError: (_) {}, onDone: () {
+    _sse = api.sse('/api/v1/events/stream').listen((_) => _bump(), onError: (_) {}, onDone: () {
       Future.delayed(const Duration(seconds: 10), () {
         if (_tick != null) _listenSse();
       });

@@ -121,3 +121,36 @@ def test_compat_llm_drives_pipeline_with_stock_footage(user, env, monkeypatch):
         assert seen["json_mode_rejected"] == 1
         assert "template_script" not in {f["id"] for f in p.quality_report["risk_flags"]}
         assert "offline_voice" in {f["id"] for f in p.quality_report["risk_flags"]}  # ses hâlâ robotik → inceleme (dürüst)
+
+
+def test_stock_falls_back_to_english_category_queries_without_llm(user, env, monkeypatch):
+    """MOCK: LLM yokken (şablon) Türkçe konu sözcükleri stokta sonuç vermez → İngilizce kategori aramalarına düşülür, düz renk olmaz."""
+    import httpx
+    from backend.core import config
+    from backend.services.credentials import set_credential
+    from tests.mocks import media
+    config.reset_settings_cache()
+    with session_scope() as db:
+        set_credential(db, user, "pixabay", "pixabay-key-123456")
+    queries = []
+
+    def handler(req: httpx.Request):
+        if req.url.host == "pixabay.com":
+            q = req.url.params["q"]
+            queries.append(q)
+            ok = q in ("science laboratory", "space galaxy stars", "planet earth from space", "microscope cells", "telescope night sky", "chemistry experiment", "dna science")
+            hits = [{"id": 500 + len(queries) * 10 + i, "duration": 9, "pageURL": "https://pixabay.com/v", "user": "u", "videos": {"medium": {"url": "https://cdn.pixabay.com/v.mp4"}}} for i in range(3)] if ok else []
+            return httpx.Response(200, json={"hits": hits})
+        if req.url.host == "cdn.pixabay.com":
+            return httpx.Response(200, content=media("mp4", len(queries) % 4))
+        return httpx.Response(404)
+    H.set_transport_factory(lambda: httpx.MockTransport(handler))
+    pid = make_project(user, media_mode="hybrid", quality_tier="standard", duration_target=18, topic="Gezegenlerin sıralaması ve özellikleri", category="Bilim")
+    run_project(pid)
+    with session_scope() as db:
+        origins = [s.origin for s in db.execute(select(Scene).where(Scene.project_id == pid)).scalars()]
+        assert origins and set(origins) == {"stock"}, origins  # hiçbir sahne düz renge düşmedi
+        p = db.get(Project, pid)
+        lic = [a.license for a in db.query(__import__("backend.models", fromlist=["Asset"]).Asset).filter_by(project_id=pid, kind="video")]
+        assert all(l.get("type") == "Pixabay Content License" and l.get("commercial_use") for l in lic)
+    assert any(q == "science laboratory" or q in ("space galaxy stars", "planet earth from space", "microscope cells") for q in queries)

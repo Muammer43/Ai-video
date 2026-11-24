@@ -9,10 +9,54 @@ from ..router import register
 from .common import describe
 
 
+_STOP = {"the", "and", "with", "style", "cinematic", "shot", "scene", "detailed", "text", "no", "of", "in", "a", "an", "for", "camera", "slow", "push",
+         "pull", "pan", "track", "tracking", "lighting", "soft", "light", "composition", "centered", "vertical", "frame", "wide", "close", "closeup",
+         "dramatic", "high", "detail", "real", "people", "likeness", "watermark", "logos", "motion", "dolly"}
+
+# Kategori -> İngilizce stok arama ifadeleri (LLM yoksa/başarısızsa sahneye göre döndürülür; Türkçe konu sözcükleri stokta sonuç vermez)
+CATEGORY_QUERIES = {
+    "Bilim": ["science laboratory", "space galaxy stars", "planet earth from space", "microscope cells", "telescope night sky", "chemistry experiment", "dna science"],
+    "Teknoloji": ["technology futuristic", "circuit board electronics", "smartphone technology", "data center servers", "coding programming screen", "robot technology", "city lights night"],
+    "Yapay Zekâ": ["artificial intelligence", "robot technology", "neural network abstract", "futuristic digital", "data visualization", "computer code screen", "hologram technology"],
+    "Oyun": ["video game controller", "gaming setup neon", "esports arena", "arcade retro game", "neon city night", "virtual reality gaming", "game console"],
+    "GTA 6": ["city skyline night", "sports car driving city", "neon city night", "beach sunset palm trees", "helicopter city aerial", "street traffic night", "video game controller"],
+    "Otomobil": ["sports car driving", "car engine", "highway driving", "luxury car", "car racing", "road trip car", "city traffic night"],
+    "Tarih": ["ancient ruins", "old map history", "castle medieval", "ancient architecture", "museum artifacts", "historic city old", "stone ruins sunset"],
+    "Bilgi": ["library books", "world map globe", "light bulb idea", "city time lapse", "nature landscape", "abstract background", "notebook study"],
+    "Eğlence": ["party celebration", "concert lights", "friends laughing", "confetti celebration", "city night lights", "dance crowd", "cinema popcorn"],
+    "Finans": ["stock market chart", "business city skyline", "money coins", "office business meeting", "financial graph", "city skyscrapers", "calculator desk"],
+    "Seyahat": ["travel landscape drone", "beach tropical", "mountain landscape", "city aerial travel", "airplane window clouds", "old town street", "sunset ocean"],
+    "Eğitim": ["classroom students", "studying books", "university campus", "writing notebook", "library books", "teacher blackboard", "light bulb idea"],
+    "Hikâye": ["foggy forest", "dark mysterious night", "moody cinematic landscape", "old house mystery", "stormy clouds", "candle light dark", "lonely road sunset"],
+    "Belgesel": ["nature wildlife", "mountain river", "forest aerial", "ocean waves", "desert landscape", "clouds time lapse", "waterfall nature"],
+}
+GENERIC_QUERIES = ["abstract background", "city time lapse", "clouds time lapse", "nature landscape", "light particles abstract"]
+
+
 def _query(prompt: str) -> str:
-    words = re.findall(r"[A-Za-zÇĞİÖŞÜçğıöşü]{3,}", prompt)
-    stop = {"the", "and", "with", "style", "cinematic", "shot", "scene", "detailed", "text", "no", "of", "in", "a", "an", "for"}
-    return " ".join([w for w in words if w.lower() not in stop][:5]) or "abstract background"
+    """İstemden yalnızca İngilizce, anlamlı sözcükleri al (Türkçe sözcükler stok aramada sonuç vermez)."""
+    words = re.findall(r"[A-Za-z]{3,}", prompt)
+    return " ".join([w for w in words if w.lower() not in _STOP][:4])
+
+
+def candidate_queries(req: VideoRequest) -> list[str]:
+    qs: list[str] = []
+    if req.stock_query.strip():
+        qs.append(req.stock_query.strip()[:80])
+    q = _query(req.prompt)
+    if q:
+        qs.append(q)
+    cat = CATEGORY_QUERIES.get(req.category, [])
+    if cat:
+        qs.append(cat[req.scene_idx % len(cat)])
+        qs.append(cat[(req.scene_idx + 3) % len(cat)])
+    qs.append(GENERIC_QUERIES[req.scene_idx % len(GENERIC_QUERIES)])
+    seen, out = set(), []
+    for x in qs:
+        if x.lower() not in seen:
+            seen.add(x.lower())
+            out.append(x)
+    return out[:4]
 
 
 class StockVideo(Provider):
@@ -26,20 +70,22 @@ class StockVideo(Provider):
         return ctx.creds.has("pexels") or ctx.creds.has("pixabay")
 
     def execute(self, ctx: CallContext, req: VideoRequest) -> ProviderResult:
-        q = req.stock_query or _query(req.prompt)
         errors = []
         with H.client(60) as c:
-            if ctx.creds.has("pexels"):
-                try:
-                    return self._pexels(ctx, c, req, q)
-                except ProviderError as e:
-                    errors.append(str(e))
-            if ctx.creds.has("pixabay"):
-                try:
-                    return self._pixabay(ctx, c, req, q)
-                except ProviderError as e:
-                    errors.append(str(e))
-        raise ProviderError("stok: sonuç bulunamadı — " + "; ".join(errors), "permanent")
+            for q in candidate_queries(req):  # ilk sonuç veren arama kullanılır
+                for name, fn in (("pexels", self._pexels), ("pixabay", self._pixabay)):
+                    if not ctx.creds.has(name):
+                        continue
+                    try:
+                        res = fn(ctx, c, req, q)
+                        res.meta["stock_query_used"] = q
+                        return res
+                    except ProviderError as e:
+                        if e.kind in ("auth", "rate_limit"):
+                            errors.append(str(e))
+                            continue
+                        errors.append(f"'{q}': {str(e)[:60]}")
+        raise ProviderError("stok: sonuç bulunamadı — " + "; ".join(errors[-4:]), "permanent")
 
     def _pexels(self, ctx, c, req, q):  # noqa: ANN001
         orient = {"9:16": "portrait", "16:9": "landscape", "1:1": "square"}.get(req.aspect_ratio, "portrait")

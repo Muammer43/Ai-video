@@ -253,7 +253,7 @@ def stage_assets(project_id: str, ctx) -> None:
                     break
                 if step == "stock":
                     vout = router.run("video", sctx, VideoRequest(prompt=shot["video_prompt"], duration=dur, aspect_ratio=p["aspect_ratio"],
-                                                                 resolution=p["resolution"], scene_idx=sc["idx"], stock_query=shot.get("stock_query", "")),
+                                                                 resolution=p["resolution"], scene_idx=sc["idx"], stock_query=shot.get("stock_query", ""), category=p["category"]),
                                       preferred=["stock"], db_factory=session_scope, guard=guard)
                     origin, clip, prov, extra = "stock", vout.result.path, "stock", vout.result.meta
                     lic = extra.get("license", {})
