@@ -1,8 +1,10 @@
 import 'package:ai_video_factory/core/api_core.dart';
+import 'package:ai_video_factory/main.dart' show App;
 import 'package:ai_video_factory/core/state.dart';
 import 'package:ai_video_factory/features/dashboard.dart';
 import 'package:ai_video_factory/features/login.dart';
 import 'package:ai_video_factory/features/projects.dart';
+import 'package:ai_video_factory/ui/locale.dart';
 import 'package:ai_video_factory/ui/theme.dart';
 import 'package:ai_video_factory/ui/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,7 +20,7 @@ Future<Widget> app(Widget child, {List overrides = const []}) async {
   return ProviderScope(
     // ignore: argument_type_not_assignable
     overrides: [prefsProvider.overrideWithValue(prefs), tokenStoreProvider.overrideWithValue(MemoryTokenStore()), ...overrides.cast()],
-    child: MaterialApp(theme: buildTheme(), home: Scaffold(body: child)),
+    child: MaterialApp(theme: buildTheme(), locale: const Locale('tr'), supportedLocales: appSupportedLocales, localizationsDelegates: appLocalizationsDelegates, home: Scaffold(body: child)),
   );
 }
 
@@ -35,6 +37,7 @@ final fakeDash = {
 };
 
 void main() {
+  testAppRoot();
   testWidgets('Giriş ekranı: doğrulama ve http uyarısı (dar telefon ekranı)', (t) async {
     t.view.physicalSize = const Size(360 * 2, 640 * 2);
     t.view.devicePixelRatio = 2;
@@ -90,5 +93,26 @@ void main() {
     await t.pumpWidget(await app(const Column(children: [PipelineBar(stage: 'ASSETS', status: 'PROCESSING'), StatusChip('NEEDS_REVIEW')])));
     expect(find.text('Görsel/Video'), findsOneWidget);
     expect(find.text('İnceleme gerekli'), findsOneWidget);
+  });
+}
+
+// Regresyon: gerçek App kökü (tr yerel ayarı + yerelleştirme temsilcileri) ile giriş formu çizilebilmeli.
+// Daha önce temsilciler eksikti → cihazda (release) form yerine gri hata kutusu görünüyordu.
+void testAppRoot() {
+  testWidgets('Gerçek App kökü tr yerel ayarında giriş formunu hatasız çizer', (t) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    await initializeDateFormatting('tr');
+    t.view.physicalSize = const Size(1080, 2400);
+    t.view.devicePixelRatio = 3;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(ProviderScope(overrides: [prefsProvider.overrideWithValue(prefs), tokenStoreProvider.overrideWithValue(MemoryTokenStore())], child: const App()));
+    await t.pumpAndSettle();
+    expect(find.byType(TextFormField), findsNWidgets(3)); // sunucu, e-posta, parola
+    expect(find.text('Giriş yap'), findsOneWidget);
+    expect(t.takeException(), isNull);
+    await t.enterText(find.byType(TextFormField).at(1), 'a@b.co');
+    await t.pump();
+    expect(find.text('a@b.co'), findsOneWidget);
   });
 }

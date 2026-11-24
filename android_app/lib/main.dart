@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/state.dart';
 import 'features/login.dart';
 import 'features/shell.dart';
+import 'ui/locale.dart';
 import 'ui/theme.dart';
 
 Future<void> main() async {
@@ -40,7 +41,8 @@ class _AppState extends ConsumerState<App> {
       themeMode: ThemeMode.dark,
       darkTheme: buildTheme(),
       locale: const Locale('tr'),
-      supportedLocales: const [Locale('tr'), Locale('en')],
+      supportedLocales: appSupportedLocales,
+      localizationsDelegates: appLocalizationsDelegates,
       home: switch (s.status) {
         AuthStatus.loading => const Scaffold(body: Center(child: CircularProgressIndicator())),
         AuthStatus.loggedOut => const LoginScreen(),
